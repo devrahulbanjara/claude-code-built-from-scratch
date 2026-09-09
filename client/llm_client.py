@@ -1,14 +1,15 @@
 import asyncio
 import os
-
-from dotenv import load_dotenv
-from openai import AsyncOpenAI, RateLimitError, APIConnectionError, APIError
+from collections.abc import AsyncGenerator
 from typing import Any
 
-from typing import AsyncGenerator
-from client.response import StreamEventType, StreamEvent, TextDelta, TokenUsage
+from dotenv import load_dotenv
+from openai import APIConnectionError, APIError, AsyncOpenAI, RateLimitError
+
+from client.response import StreamEvent, StreamEventType, TextDelta, TokenUsage
 
 load_dotenv()
+
 
 class LLMClient:
     def __init__(self) -> None:
@@ -34,7 +35,9 @@ class LLMClient:
             await self._client.close()
             self._client = None
 
-    async def chat_completions(self, messages: list[dict[str, Any]], stream: bool = True) -> AsyncGenerator[StreamEvent, None]:
+    async def chat_completions(
+        self, messages: list[dict[str, Any]], stream: bool = True
+    ) -> AsyncGenerator[StreamEvent]:
         client = self.get_client()
 
         kwargs = {
@@ -43,7 +46,7 @@ class LLMClient:
             "stream": stream,
         }
 
-        for attempt in range(self._max_retries+1):
+        for attempt in range(self._max_retries + 1):
             try:
                 if stream:
                     async for response in self._stream_response(client, kwargs):
@@ -73,25 +76,25 @@ class LLMClient:
                     )
                     return
             except APIError as e:
-                    yield StreamEvent(
-                        type=StreamEventType.ERROR,
-                        error=f"Rate limit exceeded: {e}",
-                    )
+                yield StreamEvent(
+                    type=StreamEventType.ERROR,
+                    error=f"Rate limit exceeded: {e}",
+                )
 
     async def _stream_response(self, client: AsyncOpenAI, kwargs: dict[str, Any]):
         response = await client.chat.completions.create(**kwargs)
 
-        finish_reason : str | None = None
-        usage : TokenUsage | None = None
+        finish_reason: str | None = None
+        usage: TokenUsage | None = None
 
         async for chunk in response:
             if hasattr(chunk, "usage") and chunk.usage:
                 usage = TokenUsage(
-                prompt_tokens=chunk.usage.prompt_tokens,
-                completion_tokens=chunk.usage.completion_tokens,
-                total_tokens=chunk.usage.total_tokens,
-                cached_tokens=chunk.usage.prompt_tokens_details.cached_tokens
-            )
+                    prompt_tokens=chunk.usage.prompt_tokens,
+                    completion_tokens=chunk.usage.completion_tokens,
+                    total_tokens=chunk.usage.total_tokens,
+                    cached_tokens=chunk.usage.prompt_tokens_details.cached_tokens,
+                )
             if not chunk.choices:
                 continue
 
@@ -113,7 +116,9 @@ class LLMClient:
             usage=usage,
         )
 
-    async def _non_stream_response(self, client: AsyncOpenAI, kwargs: dict[str, Any]) -> StreamEvent:
+    async def _non_stream_response(
+        self, client: AsyncOpenAI, kwargs: dict[str, Any]
+    ) -> StreamEvent:
         response = await client.chat.completions.create(**kwargs)
         choice = response.choices[0]
         message = choice.message
@@ -129,7 +134,7 @@ class LLMClient:
                 prompt_tokens=response.usage.prompt_tokens,
                 completion_tokens=response.usage.completion_tokens,
                 total_tokens=response.usage.total_tokens,
-                cached_tokens=response.usage.prompt_tokens_details.cached_tokens
+                cached_tokens=response.usage.prompt_tokens_details.cached_tokens,
             )
 
         return StreamEvent(

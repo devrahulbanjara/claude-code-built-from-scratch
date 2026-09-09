@@ -1,6 +1,7 @@
 from __future__ import annotations
-from enum import Enum
+
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Any
 
 from client.response import TokenUsage
@@ -16,6 +17,7 @@ class AgentEventType(str, Enum):
     TEXT_DELTA = "text_delta"
     TEXT_COMPLETE = "text_complete"
 
+
 @dataclass
 class AgentEvent:
     type: AgentEventType
@@ -23,66 +25,41 @@ class AgentEvent:
 
     @classmethod
     def agent_start(
-            cls,
-            response: str | None = None,
-            usage: TokenUsage | None = None
+        cls, response: str | None = None, usage: TokenUsage | None = None
     ) -> AgentEvent:
         return cls(
-            type = AgentEventType.AGENT_START,
-            data = {
-                "message": response,
-                'usage': usage.__dict__ if usage else None
-            },
+            type=AgentEventType.AGENT_START,
+            data={"message": response, "usage": usage.__dict__ if usage else None},
         )
 
     @classmethod
     def agent_end(
-            cls,
-            response: str | None = None,
-            usage: TokenUsage | None = None
+        cls, response: str | None = None, usage: TokenUsage | None = None
     ) -> AgentEvent:
         return cls(
-            type = AgentEventType.AGENT_END,
-            data = {
-                "message": response,
-                'usage': usage.__dict__ if usage else None
-            },
+            type=AgentEventType.AGENT_END,
+            data={"message": response, "usage": usage.__dict__ if usage else None},
         )
 
     @classmethod
     def agent_error(
-            cls,
-            error: str | None = None,
-            details: dict[str, Any] | None = None
+        cls, error: str | None = None, details: dict[str, Any] | None = None
     ) -> AgentEvent:
         return cls(
             type=AgentEventType.AGENT_ERROR,
-            data={
-                "error": error,
-                'details':details or {}
-            },
+            data={"error": error, "details": details or {}},
         )
 
     @classmethod
-    def text_delta(
-            cls,
-            content: str
-    ) -> AgentEvent:
+    def text_delta(cls, content: str) -> AgentEvent:
         return cls(
             type=AgentEventType.TEXT_DELTA,
-            data={
-                'content': content
-            },
+            data={"content": content},
         )
 
     @classmethod
-    def text_complete(
-            cls,
-            content: str
-    ) -> AgentEvent:
+    def text_complete(cls, content: str) -> AgentEvent:
         return cls(
             type=AgentEventType.TEXT_COMPLETE,
-            data={
-                'content': content
-            },
+            data={"content": content},
         )

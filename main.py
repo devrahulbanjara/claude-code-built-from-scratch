@@ -9,9 +9,10 @@ from ui.tui import TUI, get_console
 
 console = get_console()
 
+
 class CLI:
     def __init__(self):
-        self.agent : Agent | None = None
+        self.agent: Agent | None = None
         self.tui = TUI(console)
 
     async def run_single(self, message: str) -> str | None:
@@ -44,11 +45,10 @@ class CLI:
 
         return final_response
 
+
 @click.command()
 @click.argument("prompt", required=False)
-def main(
-        prompt: str | None
-):
+def main(prompt: str | None):
     cli = CLI()
     # messages = [
     #     {"role": "user", "content": prompt},

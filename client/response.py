@@ -1,6 +1,8 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
+
 
 @dataclass
 class TextDelta:
@@ -15,12 +17,13 @@ class StreamEventType(str, Enum):
     MESSAGE_COMPLETE = "message_complete"
     ERROR = "error"
 
+
 @dataclass
 class TokenUsage:
     prompt_tokens: int = 0
     completion_tokens: int = 0
     total_tokens: int = 0
-    cached_tokens: int | None= 0
+    cached_tokens: int | None = 0
 
     def __add__(self, other: TokenUsage) -> TokenUsage:
         return TokenUsage(
