@@ -78,8 +78,9 @@ class LLMClient:
             except APIError as e:
                 yield StreamEvent(
                     type=StreamEventType.ERROR,
-                    error=f"Rate limit exceeded: {e}",
+                    error=f"API error: {e}",
                 )
+                return
 
     async def _stream_response(self, client: AsyncOpenAI, kwargs: dict[str, Any]):
         response = await client.chat.completions.create(**kwargs)

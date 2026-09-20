@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator
+from typing import Self
 
 from agent.events import AgentEvent, AgentEventType
 from client.llm_client import LLMClient
@@ -17,7 +18,7 @@ class Agent:
 
         final_response: str | None = None
 
-        async for event in self._agentic_loop():
+        async for event in self._agentic_loop(message):
             yield event
 
             if event.type == AgentEventType.TEXT_COMPLETE:
@@ -25,9 +26,9 @@ class Agent:
 
         yield AgentEvent.agent_end(final_response)
 
-    async def _agentic_loop(self) -> AsyncGenerator[AgentEvent]:
+    async def _agentic_loop(self, message: str) -> AsyncGenerator[AgentEvent]:
         messages = [
-            {"role": "user", "content": "Hey what is going on"},
+            {"role": "user", "content": message},
         ]
 
         response_text = ""
@@ -44,7 +45,7 @@ class Agent:
         if response_text:
             yield AgentEvent.text_complete(response_text)
 
-    async def __aenter__(self) -> Agent:
+    async def __aenter__(self) -> Self:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
