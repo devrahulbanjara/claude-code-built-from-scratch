@@ -35,16 +35,38 @@ class LLMClient:
             await self._client.close()
             self._client = None
 
+    def _build_tools(self, tools: list[dict[str, Any]]):
+        return [
+            {
+                "type": "function",
+                "function": {
+                    "name": tool["name"],
+                    "description": tool.get("description", ""),
+                    "parameters": tool.get(
+                        "parameters", {"type": "object", "properties": {}}
+                    ),
+                },
+            }
+            for tool in tools
+        ]
+
     async def chat_completions(
-        self, messages: list[dict[str, Any]], stream: bool = True
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]] | None = None,
+        stream: bool = True,
     ) -> AsyncGenerator[StreamEvent]:
         client = self.get_client()
 
         kwargs = {
-            "model": "google/gemma-4-26b-a4b-it:free",
+            "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
             "messages": messages,
             "stream": stream,
         }
+
+        if tools:
+            kwargs["tools"] = self._build_tools(tools)
+            kwargs["tool_choice"] = "auto"
 
         for attempt in range(self._max_retries + 1):
             try:
@@ -87,6 +109,7 @@ class LLMClient:
 
         finish_reason: str | None = None
         usage: TokenUsage | None = None
+        tool_calls: dict[int, dict[str, Any]] = {}
 
         async for chunk in response:
             if hasattr(chunk, "usage") and chunk.usage:
@@ -110,6 +133,17 @@ class LLMClient:
                     type=StreamEventType.TEXT_DELTA,
                     text_delta=TextDelta(content=delta.content),
                 )
+
+            if delta.tool_calls:
+                for tool_call_delta in delta.tool_calls:
+                    idx = tool_call_delta.index
+
+                    if idx not in tool_calls:
+                        tool_calls[idx] = {
+                            "id": tool_call_delta.id or "",
+                            "name": "",
+                            "arguments": "",
+                        }
 
         yield StreamEvent(
             type=StreamEventType.MESSAGE_COMPLETE,

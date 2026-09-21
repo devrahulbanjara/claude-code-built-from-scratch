@@ -35,8 +35,8 @@ class ToolResult:
     truncated: bool = False
 
     @classmethod
-    def error_result(cls, error: str, output: str = ""):
-        return cls(success=False, output=output, error=error)
+    def error_result(cls, error: str, output: str = "", **kwargs: Any):
+        return cls(success=False, output=output, error=error, **kwargs)
 
     @classmethod
     def success_result(cls, output: str, **kwargs: Any):
@@ -106,7 +106,7 @@ class Tool(abc.ABC):
         schema = self.schema
 
         if isinstance(schema, type) and issubclass(schema, BaseModel):
-            json_schema = model_json_schema(schema, model="serialization")
+            json_schema = model_json_schema(schema, mode="serialization")
             return {
                 "name": self.name,
                 "description": self.description,
