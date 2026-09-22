@@ -85,10 +85,9 @@ class ReadFileTool(Tool):
             else:
                 end_idx = total_lines
 
-            selected_lines = lines[start_idx, end_idx]
-            formatted_lines = []
+            selected_lines = lines[start_idx:end_idx]
             formatted_lines = [
-                formatted_lines.append(f"{i:6}|{line}")
+                f"{i:6}|{line}"
                 for i, line in enumerate(selected_lines, start=start_idx + 1)
             ]
 
